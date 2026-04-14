@@ -53,3 +53,18 @@ npm run dev
 
 Open `http://localhost:5173`.
 
+## Deploy to GitHub Pages (frontend only)
+
+This repo includes a GitHub Action that builds the **frontend** and publishes it to GitHub Pages.
+
+1. Push this repo to GitHub.
+2. In your GitHub repo go to **Settings → Pages**.
+3. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+4. Push to `main` (or re-run the workflow in **Actions**).
+
+Your site will be available at:
+
+- `https://<your-username>.github.io/<your-repo-name>/`
+
+Note: GitHub Pages hosts the frontend only. The `/api` backend won’t run on Pages.
+
