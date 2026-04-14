@@ -1,113 +1,55 @@
 ## CFG Visualiser
 
-A small web app for **visualising context-free grammar (CFG) derivations and parse trees**.
+CFG Visualiser is a small web app that helps you **see how a context‑free grammar generates a string**.
 
-- **Frontend**: React + Vite
-- **Backend**: Express (API at `:5050`)
-- **Tree rendering**: React Flow
+You can type a grammar, type a string, and the app shows:
+- the **leftmost / rightmost derivation steps**
+- an **animated parse tree** that builds step-by-step
 
-## Features
+## How to use it
 
-- **Grammar editor** (multiple rules, `|` alternatives, supports `ε` / `epsilon`)
-- **Leftmost / rightmost derivations** with step navigation (Prev/Next/Play) and a speed slider
-- **Animated tree build** per derivation step (edge draw + node pop, with reduced-motion support)
-- **Minimap** + zoom/fit/fullscreen controls
-- **Export parse tree to PNG**
-- **Example grammars dropdown**
-- **Theme toggle** (light/dark)
+1. Add grammar rules (one LHS per row).
+2. Use `|` for multiple options on the right-hand side.
+3. Use `ε` to mean “empty” (epsilon).
+4. Click **Generate**.
+5. Use **Prev / Next / Play** to watch the tree build.
 
-## Project structure
+### Example (aⁿbⁿ)
 
-```
-cfg-visualiser-main/
-  client/   # React UI (Vite)
-  server/   # Express API
-```
+Grammar:
+- `S → aSb | ε`
 
-## Prerequisites
+String:
+- `aaabbb`
 
-- Node.js (recommended: latest LTS)
-- npm
+## Helpful notes
 
-## Setup
+- **Start symbol**: the app uses the first rule’s LHS (so if your first rule is `E`, it starts from `E`).
+- **Spaces don’t matter**: you can write `E → E + E` and it will still work.
+- **Ambiguous grammars**: the app will show *one* valid derivation/tree if it finds one.
 
-Install dependencies:
+## Running it (local)
+
+Install once:
 
 ```bash
 npm install --prefix server
 npm install --prefix client
 ```
 
-## Run locally (dev)
-
-### 1) Start the backend (port 5050)
+Then run the backend:
 
 ```bash
 cd server
 node index.js
 ```
 
-Backend health check:
-
-```bash
-curl http://localhost:5050/
-```
-
-### 2) Start the frontend (port 5173)
+And run the frontend:
 
 ```bash
 cd client
 npm run dev
 ```
 
-Open:
-
-- `http://localhost:5173`
-
-The Vite dev server proxies API requests to the backend (`/api/*` → `http://localhost:5050`).
-
-## API
-
-### `POST /api/derive`
-
-Request body:
-
-```json
-{
-  "grammar": [{ "lhs": "S", "rhs": "aSb|ε" }],
-  "string": "aaabbb",
-  "startSymbol": "S"
-}
-```
-
-Response includes:
-
-- `leftmost`: array of sentential forms (steps)
-- `rightmost`: array of sentential forms (steps)
-- `tree`: parse tree object (used by the UI)
-
-## Notes / tips
-
-- **Start symbol**: the app uses the first rule’s LHS as the start symbol.
-- **Whitespace**: whitespace inside productions / input is ignored by the backend.
-- **Ambiguous grammars**: the app will show *one* valid derivation/tree if found (it does not enumerate all parses).
-
-## Scripts
-
-### Client
-
-```bash
-cd client
-npm run dev
-npm run build
-npm run preview
-```
-
-### Server
-
-```bash
-cd server
-npm run dev   # nodemon (may hit OS file-watch limits on some setups)
-npm run start
-```
+Open `http://localhost:5173`.
 

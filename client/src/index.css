@@ -3,7 +3,7 @@
 :root {
   /* Lavender Dream (Pastel UI + Soft Neon Dark Mode) — dark mode default */
   --background: #121018;
-  --canvas: #121018;
+  --canvas: #13111A; /* slightly lighter than background for separation */
   --surface: #1A1625;
   --surface-2: #211C2F;
   --surface-header: #1A1625;
@@ -31,12 +31,17 @@
   --error: #ff4d4d;
 
   /* Parse tree */
-  --node-fill: #211C2F;
+  --node-fill: #25203A;          /* slightly lighter for readability */
   --node-fill-terminal: #1A1625;
   --node-border-non-terminal: #6E5A9E;
   --node-border-terminal: #6E5A9E;
   --node-text: #F1ECFF;
   --edge: #D97AB6; /* edges in dark */
+
+  /* Minimap */
+  --minimap-bg: #13111A;
+  --minimap-border: #6E5A9E;
+  --minimap-mask: rgba(18, 16, 24, 0.38);
 
   /* Typography */
   --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
@@ -93,6 +98,10 @@
   --node-border-terminal: #8E7AB5;
   --node-text: #2D2A3A;
   --edge: #F2A7D8; /* pink arrows in light mode */
+
+  --minimap-bg: #E6E1EF;
+  --minimap-border: #9B7FBF;
+  --minimap-mask: rgba(244, 241, 248, 0.60);
 
   --shadow-sm: 0 1px 1px rgba(0,0,0,0.04);
   --shadow-md: 0 10px 22px rgba(0,0,0,0.06);

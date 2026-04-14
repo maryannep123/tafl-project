@@ -179,7 +179,6 @@ function App() {
       <div className="app-header">
         <div>
           <h1 className="app-title">CFG Visualiser</h1>
-          <p className="app-subtitle">Context-Free Grammar · Derivation · Parse Tree</p>
         </div>
         <div className="header-actions">
           <button

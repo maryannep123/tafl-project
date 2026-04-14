@@ -528,16 +528,16 @@ const ParseTreeCanvas = ({ tree, grammar, steps, currentStep, onAnimatingChange 
               pannable
               zoomable
               style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
+                background: 'var(--minimap-bg)',
+                border: '1px solid var(--minimap-border)',
                 borderRadius: 10,
               }}
               nodeColor={(node) => {
-                if (node.data.isEpsilon) return 'var(--node-fill)';
+                if (node.data.isEpsilon) return 'var(--node-fill-terminal)';
                 if (node.data.isNonTerminal) return 'var(--accent)';
                 return 'var(--node-fill-terminal)';
               }}
-              maskColor="rgba(0, 0, 0, 0.5)"
+              maskColor="var(--minimap-mask)"
             />
           )}
         </ReactFlow>
