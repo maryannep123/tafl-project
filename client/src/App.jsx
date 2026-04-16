@@ -254,6 +254,7 @@ function App() {
                 tree={tree}
                 grammar={result?.grammar}
                 steps={steps}
+                mode={mode}
                 currentStep={currentStep}
                 onAnimatingChange={setIsAnimatingTree}
               />
