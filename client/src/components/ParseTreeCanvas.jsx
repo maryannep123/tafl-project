@@ -69,7 +69,7 @@ const EDGE_MS = 250;
 const NODE_MS = 300;
 const STAGGER_MS = 80;
 
-const ParseTreeCanvas = ({ tree, grammar, steps, currentStep, onAnimatingChange }) => {
+const ParseTreeCanvas = ({ tree, grammar, steps, currentStep, mode = 'left', onAnimatingChange }) => {
   const wrapperRef = useRef(null);
   const exportAreaRef = useRef(null);
   const [rfInstance, setRfInstance] = useState(null);
@@ -111,11 +111,30 @@ const ParseTreeCanvas = ({ tree, grammar, steps, currentStep, onAnimatingChange 
     };
 
     const isNonTerminal = (sym) => /^[A-Z][A-Za-z0-9_]*$/.test(sym);
-    const firstDiffIndex = (aTokens, bTokens) => {
-      const min = Math.min(aTokens.length, bTokens.length);
-      let i = 0;
-      while (i < min && aTokens[i] === bTokens[i]) i++;
-      return i;
+    const arrayEquals = (a, b) => a.length === b.length && a.every((value, index) => value === b[index]);
+    const findExpansionMatch = (fromTokens, toTokens) => {
+      const scanStart = mode === 'right' ? fromTokens.length - 1 : 0;
+      const scanEnd = mode === 'right' ? -1 : fromTokens.length;
+      const scanStep = mode === 'right' ? -1 : 1;
+      for (let index = scanStart; index !== scanEnd; index += scanStep) {
+        const lhs = fromTokens[index];
+        if (!isNonTerminal(lhs)) continue;
+
+        const productions = grammarMap?.[lhs] ?? [];
+        for (const production of productions) {
+          const producedTokens = production === '' ? [] : tokenize(production);
+          const candidate = [
+            ...fromTokens.slice(0, index),
+            ...producedTokens,
+            ...fromTokens.slice(index + 1),
+          ];
+          if (arrayEquals(candidate, toTokens)) {
+            return { index, producedTokens };
+          }
+        }
+      }
+
+      return null;
     };
 
     const root = createNode(startSymbol);
@@ -125,33 +144,28 @@ const ParseTreeCanvas = ({ tree, grammar, steps, currentStep, onAnimatingChange 
       const fromTokens = tokenize(derivationSteps[i]);
       const toTokens = tokenize(derivationSteps[i + 1]);
 
-      let start = firstDiffIndex(fromTokens, toTokens);
-      if (start >= fromTokens.length && start >= toTokens.length) continue;
+      const match = findExpansionMatch(fromTokens, toTokens);
+      if (!match) return root;
 
-      const delta = toTokens.length - fromTokens.length;
-      // Handle prefix-expansion like E -> E+E where `fromTokens` is a strict prefix of `toTokens`.
-      if (delta > 0 && start === fromTokens.length && fromTokens.length > 0) {
-        start = fromTokens.length - 1;
-      }
-
+      const { index: start, producedTokens } = match;
       const replaced = fromTokens[start] ?? "";
-      const producedLen = Math.max(0, 1 + delta);
-      const producedTokens = producedLen === 0 ? [""] : toTokens.slice(start, start + producedLen);
+      const visualTokens = producedTokens.length === 0 ? [""] : producedTokens;
 
       if (!isNonTerminal(replaced) || frontier.length !== fromTokens.length) return root;
 
       const targetNode = frontier[start];
-      targetNode.children = producedTokens.map((t) => createNode(t));
+      targetNode.children = visualTokens.map((t) => createNode(t));
+      const frontierChildren = producedTokens.length === 0 ? [] : targetNode.children;
 
       frontier = [
         ...frontier.slice(0, start),
-        ...targetNode.children,
+        ...frontierChildren,
         ...frontier.slice(start + 1),
       ];
     }
 
     return root;
-  }, []);
+  }, [mode]);
 
   const getFrontierPulseNodeId = useCallback(() => {
     if (!steps || steps.length === 0) return null;
@@ -186,18 +200,35 @@ const ParseTreeCanvas = ({ tree, grammar, steps, currentStep, onAnimatingChange 
     for (let i = 0; i < upto; i++) {
       const fromTokens = tokenize(steps[i]);
       const toTokens = tokenize(steps[i + 1]);
-      let start = 0;
-      const min = Math.min(fromTokens.length, toTokens.length);
-      while (start < min && fromTokens[start] === toTokens[start]) start++;
-      if (start >= fromTokens.length && start >= toTokens.length) continue;
-      const delta = toTokens.length - fromTokens.length;
-      if (delta > 0 && start === fromTokens.length && fromTokens.length > 0) start = fromTokens.length - 1;
+      let match = null;
+      const scanStart = mode === 'right' ? fromTokens.length - 1 : 0;
+      const scanEnd = mode === 'right' ? -1 : fromTokens.length;
+      const scanStep = mode === 'right' ? -1 : 1;
+      for (let index = scanStart; index !== scanEnd; index += scanStep) {
+        const lhs = fromTokens[index];
+        if (!isNonTerminal(lhs)) continue;
+        const productions = grammar?.[lhs] ?? [];
+        for (const production of productions) {
+          const producedTokens = production === '' ? [] : tokenize(production);
+          const candidate = [
+            ...fromTokens.slice(0, index),
+            ...producedTokens,
+            ...fromTokens.slice(index + 1),
+          ];
+          if (candidate.length === toTokens.length && candidate.every((v, idx) => v === toTokens[idx])) {
+            match = { index, producedTokens };
+            break;
+          }
+        }
+        if (match) break;
+      }
+      if (!match) return null;
+      const { index: start, producedTokens } = match;
       const replaced = fromTokens[start] ?? "";
       if (!isNonTerminal(replaced) || frontierIds.length !== fromTokens.length) return null;
-      const producedLen = Math.max(0, 1 + delta);
-      const producedTokens = producedLen === 0 ? [""] : toTokens.slice(start, start + producedLen);
       const parentId = frontierIds[start];
-      const childIds = producedTokens.map((_, idx) => `${parentId}-${idx}`);
+      const childCount = producedTokens.length;
+      const childIds = Array.from({ length: childCount }, (_, idx) => `${parentId}-${idx}`);
       frontierIds = [...frontierIds.slice(0, start), ...childIds, ...frontierIds.slice(start + 1)];
     }
 
@@ -206,9 +237,9 @@ const ParseTreeCanvas = ({ tree, grammar, steps, currentStep, onAnimatingChange 
       .map((t, idx) => ({ t, idx }))
       .filter(({ t }) => isNonTerminal(t));
     if (candidates.length === 0) return null;
-    const idx = candidates[0].idx; // leftmost (matches current UI behaviour)
+    const idx = mode === 'right' ? candidates[candidates.length - 1].idx : candidates[0].idx;
     return frontierIds[idx] || null;
-  }, [steps, currentStep, grammar]);
+  }, [steps, currentStep, grammar, mode]);
 
   const convertTreeToNodes = useCallback((treeData) => {
     if (!treeData) return { nodes: [], edges: [] };

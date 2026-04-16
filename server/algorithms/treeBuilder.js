@@ -47,11 +47,29 @@ const buildParseTreeFromDerivation = (steps, startSymbol, grammarMap) => {
     return out;
   };
 
-  const firstDiffIndex = (aTokens, bTokens) => {
-    const min = Math.min(aTokens.length, bTokens.length);
-    let i = 0;
-    while (i < min && aTokens[i] === bTokens[i]) i++;
-    return i;
+  const arrayEquals = (a, b) =>
+    a.length === b.length && a.every((value, index) => value === b[index]);
+
+  const findExpansionMatch = (fromTokens, toTokens) => {
+    for (let index = 0; index < fromTokens.length; index += 1) {
+      const lhs = fromTokens[index];
+      if (!isNonTerminal(lhs)) continue;
+
+      const productions = grammarMap?.[lhs] ?? [];
+      for (const production of productions) {
+        const producedTokens = production === "" ? [] : tokenize(production);
+        const candidate = [
+          ...fromTokens.slice(0, index),
+          ...producedTokens,
+          ...fromTokens.slice(index + 1),
+        ];
+        if (arrayEquals(candidate, toTokens)) {
+          return { index, producedTokens };
+        }
+      }
+    }
+
+    return null;
   };
 
   for (let i = 0; i < steps.length - 1; i++) {
@@ -61,21 +79,11 @@ const buildParseTreeFromDerivation = (steps, startSymbol, grammarMap) => {
     const fromTokens = tokenize(from);
     const toTokens = tokenize(to);
 
-    // Identify which single symbol got expanded/replaced.
-    let start = firstDiffIndex(fromTokens, toTokens);
-    if (start >= fromTokens.length && start >= toTokens.length) continue;
+    const match = findExpansionMatch(fromTokens, toTokens);
+    if (!match) return root;
 
-    // We assume exactly one symbol is rewritten each step (leftmost/rightmost derivations).
-    const delta = toTokens.length - fromTokens.length; // +k means 1 -> 1+k tokens, -1 means 1 -> 0 (ε)
-    // If the sentential form is a strict prefix of the next form, the "first diff"
-    // lands after the rewritten symbol (e.g., E -> E+E). In that case, rewrite the last token.
-    if (delta > 0 && start === fromTokens.length && fromTokens.length > 0) {
-      start = fromTokens.length - 1;
-    }
-
+    const { index: start, producedTokens } = match;
     const replaced = fromTokens[start] ?? "";
-    const producedLen = Math.max(0, 1 + delta);
-    const produced = producedLen === 0 ? "" : toTokens.slice(start, start + producedLen).join("");
 
     // This builder expects a single non-terminal to be expanded each step.
     // If it isn't, bail out (tree will still be partially useful).
@@ -84,13 +92,14 @@ const buildParseTreeFromDerivation = (steps, startSymbol, grammarMap) => {
     }
 
     const targetNode = frontier[start];
-    const childSymbols = produced === "" ? [""] : tokenize(produced);
+    const childSymbols = producedTokens.length === 0 ? [""] : producedTokens;
     targetNode.children = childSymbols.map((s) => createNode(s));
+    const frontierChildren = producedTokens.length === 0 ? [] : targetNode.children;
 
     // Replace the expanded node in the frontier with its children (or ε leaf).
     frontier = [
       ...frontier.slice(0, start),
-      ...targetNode.children,
+      ...frontierChildren,
       ...frontier.slice(start + 1),
     ];
   }
