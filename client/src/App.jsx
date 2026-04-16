@@ -39,13 +39,13 @@ function App() {
     },
     {
       id: "anbn-ab",
-      label: "aⁿbⁿ (S → AB, A → aA|a, B → bB|b) · aaabbb",
+      label: "a⁺b⁺ (S → AB, A → aA|a, B → bB|b) · aaaaabbbb",
       grammar: [
         { lhs: "S", rhs: "AB" },
         { lhs: "A", rhs: "aA|a" },
         { lhs: "B", rhs: "bB|b" },
       ],
-      input: "aaabbb",
+      input: "aaaaabbbb",
     },
     {
       id: "palindrome",
